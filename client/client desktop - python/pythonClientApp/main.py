@@ -113,7 +113,7 @@ def isPunchOutValid():
         return True
 
 
-#               CLEAR INPUT AND OUTPUT
+# CLEAR INPUT AND OUTPUT
 def clearInputs():
     timeTrackEntry.delete(0, END)
     employeeIdEntry.delete(0, END)
