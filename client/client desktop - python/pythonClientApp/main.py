@@ -1,6 +1,7 @@
 from tkinter import *
 
 import requests
+from datetime import datetime
 
 # SUCCESS
 
@@ -11,8 +12,8 @@ SUCCESS_UPDATED_TIME_TRACK = "\nSUCCESSFULLY UPDATED TIME TRACK"
 
 INVALID_EMPLOYEE_ID_ERROR = "\nINVALID EMPLOYEE ID"
 INVALID_TIME_TRACK_ID_ERROR = "\nINVALID TIME TRACK ID"
-INVALID_CHECK_OUT_TIME_ERROR = "\nINVALID PUNCH OUT"
-INVALID_CHECK_IN_TIME_ERROR = "\nINVALID PUNCH IN"
+INVALID_CHECK_OUT_TIME_ERROR = "\nINVALID PUNCH OUT: Incorrect data format, should be DD-MM-YYYY HH:mm"
+INVALID_CHECK_IN_TIME_ERROR = "\nINVALID PUNCH IN: Incorrect data format, should be DD-MM-YYYY HH:mm"
 
 # URL
 CREATE_TIME_TRACK_URL = "http://localhost:8082/timetrack/createTimeTracking/"
@@ -24,35 +25,27 @@ UPDATE_TIME_TRACK_URL = "http://localhost:8082/timeTrack/updateEmployeeTimeTrack
 # time track method
 
 def createTimeTrack():
-    if isTimeTrackIdValid():
-        if isEmployeeIdValid():
-            if isPunchInValid():
-                if isPunchOutValid():
+    if isEmployeeIdValid(employeeIdEntry.get()):
+        if isPunchInValid(punchInEntry.get()):
+            if isPunchOutValid(punchOutEntry.get()):
+                if punchInEntry.get() < punchOutEntry.get():
                     timeTrack = {
-                        "timeTrackID": timeTrackEntry.get(),
-                        "employeeID": employeeIdEntry.get(),
+                        "idEmployee": employeeIdEntry.get(),
                         "punchIn": punchInEntry.get(),
                         "punchOut": punchOutEntry.get()
                     }
                     response = requests.post(CREATE_TIME_TRACK_URL, json=timeTrack)
-                    if response.status_code == 200:
+                else:
+                    printToErrorTextArea("PUCH IN CAN\'T BE A HIGHER VALUE THAN PUNCH OUT ")
+                if response.status_code == 200:
                         clearOutput()
                         printToOutputText(SUCCESS_CREATED_TIME_TRACK)
-                    else:
-                        printToErrorTextArea("Error " + str(response.status_code))
                 else:
-                    printToErrorTextArea(INVALID_CHECK_OUT_TIME_ERROR)
-            else:
-                printToErrorTextArea(INVALID_CHECK_IN_TIME_ERROR)
-        else:
-            printToErrorTextArea(INVALID_EMPLOYEE_ID_ERROR)
-    else:
-        printToErrorTextArea(INVALID_TIME_TRACK_ID_ERROR)
+                        printToErrorTextArea("Error " + str(response.status_code))
 
 
-# to do: def seeMyTimeTrack
 def getTimeTrackByEmployeeID():
-    if isEmployeeIdValid():
+    if isEmployeeIdValid(employeeIdEntry.get()):
         response = requests.get(GET_TIME_TRACK_BY_EMPLOYEE_ID_URL + employeeIdEntry.get())
         if response.status_code == 200:
             clearOutput()
@@ -85,32 +78,52 @@ def outputTextArea(text):
 
 
 #       DATA VALIDATION
-def isTimeTrackIdValid():
-    if timeTrackEntry.get() == '':
+def isTimeTrackIdValid(tt_id):
+    if len(tt_id) == 0:
         return False
+        printToErrorTextArea(INVALID_TIME_TRACK_ID_ERROR)
     else:
-        return True
+        if tt_id.isnumeric():
+            int(tt_id)
+            return True
+        else:
+            printToErrorTextArea(INVALID_TIME_TRACK_ID_ERROR)
+            return False
 
 
-def isEmployeeIdValid():
-    if employeeIdEntry.get() == '':
+def isEmployeeIdValid(emplID):
+    if len(emplID) == 0:
+        return printToErrorTextArea(INVALID_EMPLOYEE_ID_ERROR)
+    elif emplID.isnumeric():
+        return emplID
+    else:
+        printToErrorTextArea(INVALID_TIME_TRACK_ID_ERROR)
         return False
-    else:
-        return True
 
 
-def isPunchInValid():
-    if punchInEntry.get() == '':
-        return False
-    else:
-        return True
+def isPunchInValid(punchin):
+    try:
+        if len(punchin) != 0:
+            punchinObj = datetime.strptime(punchin, "%d/%m/%Y %H:%M")
+            return punchinObj
+        else:
+            printToErrorTextArea(INVALID_CHECK_OUT_TIME_ERROR)
+    except ValueError:
+        # raise ValueError("Incorrect data format, should be YYYY-MM-DD HH:mm")
+        raise ValueError(printToErrorTextArea(INVALID_CHECK_IN_TIME_ERROR))
 
 
-def isPunchOutValid():
-    if punchOutEntry.get() == '':
-        return False
-    else:
-        return True
+def isPunchOutValid(punchout):
+    try:
+        if len(punchout) != 0:
+            punchoutObj = datetime.strptime(punchout, "%d/%m/%Y %H:%M")
+            return punchoutObj
+        else:
+            printToErrorTextArea(INVALID_CHECK_OUT_TIME_ERROR)
+    except ValueError:
+        raise ValueError(printToErrorTextArea(INVALID_CHECK_OUT_TIME_ERROR))
+
+
 
 
 # CLEAR INPUT AND OUTPUT
